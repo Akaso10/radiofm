@@ -182,7 +182,10 @@
 
   <div class="status" id="status">Загрузка…</div>
 
-  <footer>Эфир Anthropic с <a href="https://clau.de/radio">YouTube</a></footer>
+  <footer>
+    Чтобы играло в других приложениях: откройте в Safari, разверните видео на весь экран и нажмите «картинка в картинке», затем смахните окошко за край экрана.<br><br>
+    Эфир Anthropic с <a href="https://clau.de/radio">YouTube</a>
+  </footer>
 
 <script>
   const VIDEO_ID = "tRsQsTMvPNg";
@@ -222,7 +225,8 @@
 
   function createPlayer(useChannel) {
     if (player) player.destroy();
-    const vars = { playsinline: 1, autoplay: 0, controls: 0, rel: 0, modestbranding: 1 };
+    // controls: 1 exposes the fullscreen button, which on iOS leads to Picture in Picture for background play.
+    const vars = { playsinline: 1, autoplay: 0, controls: 1, fs: 1, rel: 0, modestbranding: 1 };
     const opts = {
       playerVars: vars,
       events: {
