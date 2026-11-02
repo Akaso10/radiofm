@@ -19,7 +19,6 @@
     --text: #ffffff;
     --muted: #b3b3b3;
     --accent: #d97757;
-    --accent-dark: #b85c3e;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
@@ -30,24 +29,31 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: calc(env(safe-area-inset-top) + 24px) 16px calc(env(safe-area-inset-bottom) + 24px);
+    padding: calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 24px);
     min-height: 100%;
     user-select: none;
     -webkit-user-select: none;
   }
-  header {
-    width: 100%;
-    max-width: 420px;
-    text-align: center;
-    font-size: 12px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 28px;
+  .wrap { width: 100%; max-width: 420px; }
+
+  .tabs {
+    display: flex;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    padding: 4px;
+    margin-bottom: 24px;
   }
+  .tabs button {
+    flex: 1;
+    padding: 9px 0;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .tabs button.active { background: var(--text); color: #000; }
+
   .cover {
-    width: 100%;
-    max-width: 420px;
     aspect-ratio: 16 / 9;
     border-radius: 10px;
     overflow: hidden;
@@ -56,10 +62,21 @@
     position: relative;
   }
   .cover iframe, #player { width: 100%; height: 100%; border: 0; display: block; }
+  .art {
+    position: absolute;
+    inset: 0;
+    display: none;
+    place-items: center;
+    background: radial-gradient(circle at 30% 30%, #e08a6a, #7a3b28 60%, #2a1712);
+    font-size: 64px;
+  }
+  .art img { width: 34%; border-radius: 22%; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  body.mode-lofi .art { display: grid; }
+  body.mode-lofi #playerBox { visibility: hidden; }
+  #playerBox { width: 100%; height: 100%; }
+
   .info {
-    width: 100%;
-    max-width: 420px;
-    margin-top: 28px;
+    margin-top: 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -81,15 +98,24 @@
     flex-shrink: 0;
   }
   .live .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
-  .live.on { color: #fff; background: rgba(217, 119, 87, 0.25); }
-  .live.on .dot { background: var(--accent); animation: pulse 1.4s infinite; }
+  .playing .live { color: #fff; background: rgba(217, 119, 87, 0.25); }
+  .playing .live .dot { background: var(--accent); animation: pulse 1.4s infinite; }
   @keyframes pulse { 50% { opacity: 0.3; } }
 
+  .stations { display: none; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  body.mode-lofi .stations { display: flex; }
+  .stations button {
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--muted);
+  }
+  .stations button.active { background: var(--accent); color: #fff; }
+
   .bars {
-    width: 100%;
-    max-width: 420px;
     height: 36px;
-    margin-top: 24px;
+    margin-top: 20px;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -100,13 +126,12 @@
     height: 4px;
     border-radius: 2px;
     background: rgba(255, 255, 255, 0.18);
-    transition: height 0.3s;
   }
   .playing .bars span { background: var(--accent); animation: bounce 1.1s ease-in-out infinite; }
   @keyframes bounce { 0%, 100% { height: 4px; } 50% { height: var(--h); } }
 
   .controls {
-    margin-top: 28px;
+    margin-top: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -119,6 +144,7 @@
     cursor: pointer;
     display: grid;
     place-items: center;
+    font-family: inherit;
   }
   button svg { fill: currentColor; }
   .side { width: 44px; height: 44px; color: var(--muted); }
@@ -135,36 +161,44 @@
   .play:disabled { opacity: 0.5; }
 
   .status {
-    margin-top: 20px;
+    margin-top: 18px;
     min-height: 18px;
     font-size: 13px;
     color: var(--muted);
     text-align: center;
-    max-width: 420px;
   }
   footer {
     margin-top: auto;
-    padding-top: 32px;
+    padding-top: 28px;
     font-size: 12px;
+    line-height: 1.5;
     color: #6a6a6a;
     text-align: center;
-    max-width: 420px;
   }
   footer a { color: var(--muted); }
 </style>
 </head>
 <body>
-  <header>Сейчас в эфире</header>
+<div class="wrap">
+  <div class="tabs">
+    <button id="tabClaude" class="active">Claude FM</button>
+    <button id="tabLofi">Lofi · играет в фоне</button>
+  </div>
 
-  <div class="cover"><div id="player"></div></div>
+  <div class="cover">
+    <div id="playerBox"><div id="player"></div></div>
+    <div class="art"><img src="icon.png" alt=""></div>
+  </div>
 
   <div class="info">
     <div>
-      <div class="title">Claude FM</div>
-      <div class="subtitle">music for thinking and building</div>
+      <div class="title" id="title">Claude FM</div>
+      <div class="subtitle" id="subtitle">music for thinking and building</div>
     </div>
-    <div class="live" id="live"><span class="dot"></span>LIVE</div>
+    <div class="live"><span class="dot"></span>LIVE</div>
   </div>
+
+  <div class="stations" id="stations"></div>
 
   <div class="bars" id="bars"></div>
 
@@ -172,7 +206,7 @@
     <button class="side" id="mute" aria-label="Звук">
       <svg id="muteIcon" width="26" height="26" viewBox="0 0 24 24"></svg>
     </button>
-    <button class="play" id="play" aria-label="Играть" disabled>
+    <button class="play" id="play" aria-label="Играть">
       <svg id="playIcon" width="32" height="32" viewBox="0 0 24 24"></svg>
     </button>
     <button class="side" id="reload" aria-label="Переподключиться">
@@ -181,15 +215,21 @@
   </div>
 
   <div class="status" id="status">Загрузка…</div>
+</div>
 
-  <footer>
-    Чтобы играло в других приложениях: откройте в Safari, разверните видео на весь экран и нажмите «картинка в картинке», затем смахните окошко за край экрана.<br><br>
-    Эфир Anthropic с <a href="https://clau.de/radio">YouTube</a>
-  </footer>
+<footer class="wrap" id="footer"></footer>
+
+<audio id="audio" preload="none" playsinline></audio>
 
 <script>
   const VIDEO_ID = "tRsQsTMvPNg";
   const CHANNEL_ID = "UCV03SRZXJEz-hchIAogeJOg";
+
+  const STATIONS = [
+    { name: "REYFM Lofi", url: "https://listen.reyfm.de/lofi_128kbps.mp3", site: "https://reyfm.de" },
+    { name: "laut.fm Lofi", url: "https://stream.laut.fm/lofi", site: "https://laut.fm/lofi" },
+    { name: "0nlineradio Lo-Fi", url: "https://stream.0nlineradio.com/lo-fi", site: "https://0nlineradio.com" }
+  ];
 
   const ICONS = {
     play: '<path d="M8 5v14l11-7z"/>',
@@ -198,9 +238,25 @@
     muted: '<path d="M16.5 12A4.5 4.5 0 0 0 14 8v2.18l2.45 2.45c.03-.2.05-.41.05-.63zM19 12c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12a9 9 0 0 0-7-8.77v2.06A7 7 0 0 1 19 12zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a9 9 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z"/>'
   };
 
+  const FOOTERS = {
+    claude: 'Эфир Anthropic с <a href="https://clau.de/radio">YouTube</a>. В фоне не играет: YouTube разрешает это только с Premium.',
+    lofi: 'Можно свернуть и играть в Brawl Stars: музыка продолжит играть. Пауза — в «Пункте управления».'
+  };
+
   const $ = (id) => document.getElementById(id);
-  const playBtn = $("play"), muteBtn = $("mute"), statusEl = $("status"), liveEl = $("live");
-  let player, playing = false, usedFallback = false;
+  const audio = $("audio"), playBtn = $("play"), statusEl = $("status");
+  let mode = "claude", station = 0, playing = false;
+  let player, ytReady = false, usedFallback = false;
+
+  try {
+    const saved = JSON.parse(localStorage.getItem("radiofm") || "{}");
+    if (saved.mode === "lofi") mode = "lofi";
+    if (Number.isInteger(saved.station) && STATIONS[saved.station]) station = saved.station;
+  } catch (e) {}
+
+  function save() {
+    try { localStorage.setItem("radiofm", JSON.stringify({ mode, station })); } catch (e) {}
+  }
 
   // Equalizer bars
   for (let i = 0; i < 28; i++) {
@@ -210,32 +266,131 @@
     $("bars").appendChild(s);
   }
 
+  // Station chips
+  STATIONS.forEach((st, i) => {
+    const b = document.createElement("button");
+    b.textContent = st.name;
+    b.addEventListener("click", () => selectStation(i));
+    $("stations").appendChild(b);
+  });
+
   function setPlaying(on) {
     playing = on;
     document.body.classList.toggle("playing", on);
-    liveEl.classList.toggle("on", on);
     $("playIcon").innerHTML = on ? ICONS.pause : ICONS.play;
     playBtn.setAttribute("aria-label", on ? "Пауза" : "Играть");
+    if ("mediaSession" in navigator) navigator.mediaSession.playbackState = on ? "playing" : "paused";
+  }
+
+  function isMuted() {
+    return mode === "lofi" ? audio.muted : !!(player && player.isMuted && player.isMuted());
   }
 
   function setMuteIcon() {
-    const m = player && player.isMuted && player.isMuted();
-    $("muteIcon").innerHTML = m ? ICONS.muted : ICONS.sound;
+    $("muteIcon").innerHTML = isMuted() ? ICONS.muted : ICONS.sound;
   }
 
+  function render() {
+    document.body.classList.toggle("mode-lofi", mode === "lofi");
+    $("tabClaude").classList.toggle("active", mode === "claude");
+    $("tabLofi").classList.toggle("active", mode === "lofi");
+    [...$("stations").children].forEach((b, i) => b.classList.toggle("active", i === station));
+    if (mode === "lofi") {
+      $("title").textContent = STATIONS[station].name;
+      $("subtitle").textContent = "lofi · chill · beats";
+      playBtn.disabled = false;
+    } else {
+      $("title").textContent = "Claude FM";
+      $("subtitle").textContent = "music for thinking and building";
+      playBtn.disabled = !ytReady;
+    }
+    $("footer").innerHTML = FOOTERS[mode];
+    setMuteIcon();
+  }
+
+  function stopAll() {
+    audio.pause();
+    audio.removeAttribute("src");
+    audio.load();
+    if (player && player.pauseVideo) player.pauseVideo();
+    setPlaying(false);
+  }
+
+  function setMode(m) {
+    if (m === mode) return;
+    stopAll();
+    mode = m;
+    statusEl.textContent = (m === "claude" && !ytReady) ? "Загрузка…" : "Нажмите ▶, чтобы включить";
+    save();
+    render();
+  }
+
+  // ---------- Lofi (plain audio stream: keeps playing in the background on iOS) ----------
+  function playLofi() {
+    const st = STATIONS[station];
+    audio.src = st.url;
+    statusEl.textContent = "Подключение…";
+    audio.play().catch(() => {
+      statusEl.textContent = "Не удалось включить. Нажмите ▶ ещё раз.";
+      setPlaying(false);
+    });
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: st.name,
+        artist: "Lofi радио",
+        album: "Claude FM",
+        artwork: [{ src: "icon.png", sizes: "512x512", type: "image/png" }]
+      });
+    }
+  }
+
+  function selectStation(i) {
+    station = i;
+    save();
+    render();
+    if (playing) playLofi();
+    else statusEl.textContent = "Нажмите ▶, чтобы включить";
+  }
+
+  audio.addEventListener("playing", () => { setPlaying(true); statusEl.textContent = ""; });
+  audio.addEventListener("pause", () => { if (mode === "lofi") setPlaying(false); });
+  audio.addEventListener("waiting", () => { if (mode === "lofi") statusEl.textContent = "Буферизация…"; });
+  audio.addEventListener("error", () => {
+    if (mode !== "lofi" || !audio.getAttribute("src")) return;
+    // Station is down: try the next one.
+    const next = (station + 1) % STATIONS.length;
+    statusEl.textContent = STATIONS[station].name + " недоступна, переключаю…";
+    station = next;
+    save();
+    render();
+    playLofi();
+  });
+
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.setActionHandler("play", () => { if (mode === "lofi") playLofi(); });
+    navigator.mediaSession.setActionHandler("pause", () => { if (mode === "lofi") audio.pause(); });
+    navigator.mediaSession.setActionHandler("nexttrack", () => { if (mode === "lofi") selectStation((station + 1) % STATIONS.length); });
+    navigator.mediaSession.setActionHandler("previoustrack", () => { if (mode === "lofi") selectStation((station + STATIONS.length - 1) % STATIONS.length); });
+  }
+
+  // ---------- Claude FM (YouTube) ----------
   function createPlayer(useChannel) {
     if (player) player.destroy();
-    // controls: 1 exposes the fullscreen button, which on iOS leads to Picture in Picture for background play.
+    if (!$("player")) {
+      const d = document.createElement("div");
+      d.id = "player";
+      $("playerBox").appendChild(d);
+    }
     const vars = { playsinline: 1, autoplay: 0, controls: 1, fs: 1, rel: 0, modestbranding: 1 };
     const opts = {
       playerVars: vars,
       events: {
         onReady: () => {
-          playBtn.disabled = false;
-          statusEl.textContent = "Нажмите ▶, чтобы включить";
-          setMuteIcon();
+          ytReady = true;
+          if (mode === "claude") { statusEl.textContent = "Нажмите ▶, чтобы включить"; render(); }
         },
         onStateChange: (e) => {
+          if (mode !== "claude") return;
           if (e.data === YT.PlayerState.PLAYING) { setPlaying(true); statusEl.textContent = ""; }
           else if (e.data === YT.PlayerState.BUFFERING) statusEl.textContent = "Подключение…";
           else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) setPlaying(false);
@@ -243,51 +398,57 @@
         onError: () => {
           // The stream's video ID changes when the broadcast restarts: fall back to the channel's current live stream.
           if (!usedFallback) { usedFallback = true; createPlayer(true); return; }
+          if (mode !== "claude") return;
           setPlaying(false);
-          statusEl.textContent = "Эфир сейчас недоступен. Попробуйте позже.";
+          statusEl.textContent = "Эфир сейчас недоступен. Попробуйте вкладку Lofi.";
         }
       }
     };
     if (useChannel) { opts.videoId = "live_stream"; vars.channel = CHANNEL_ID; }
     else opts.videoId = VIDEO_ID;
-    // Recreate the container: destroy() removes the iframe.
-    if (!$("player")) {
-      const d = document.createElement("div");
-      d.id = "player";
-      document.querySelector(".cover").appendChild(d);
-    }
     player = new YT.Player("player", opts);
   }
 
   window.onYouTubeIframeAPIReady = () => createPlayer(false);
 
+  // ---------- Controls ----------
   playBtn.addEventListener("click", () => {
-    if (!player) return;
-    if (playing) player.pauseVideo();
-    else { player.unMute(); player.playVideo(); setMuteIcon(); }
+    if (mode === "lofi") {
+      playing ? audio.pause() : playLofi();
+    } else if (player && ytReady) {
+      if (playing) player.pauseVideo();
+      else { player.unMute(); player.playVideo(); }
+    }
+    setTimeout(setMuteIcon, 50);
   });
 
-  muteBtn.addEventListener("click", () => {
-    if (!player || !player.isMuted) return;
-    player.isMuted() ? player.unMute() : player.mute();
+  $("mute").addEventListener("click", () => {
+    if (mode === "lofi") audio.muted = !audio.muted;
+    else if (player && player.isMuted) player.isMuted() ? player.unMute() : player.mute();
     setTimeout(setMuteIcon, 50);
   });
 
   $("reload").addEventListener("click", () => {
+    if (mode === "lofi") { playLofi(); return; }
     if (!window.YT || !YT.Player) return;
-    playBtn.disabled = true;
+    ytReady = false;
     setPlaying(false);
     statusEl.textContent = "Переподключение…";
+    render();
     usedFallback = true;
     createPlayer(true);
   });
 
+  $("tabClaude").addEventListener("click", () => setMode("claude"));
+  $("tabLofi").addEventListener("click", () => setMode("lofi"));
+
   $("playIcon").innerHTML = ICONS.play;
-  $("muteIcon").innerHTML = ICONS.sound;
+  statusEl.textContent = mode === "lofi" ? "Нажмите ▶, чтобы включить" : "Загрузка…";
+  render();
 
   const tag = document.createElement("script");
   tag.src = "https://www.youtube.com/iframe_api";
-  tag.onerror = () => { statusEl.textContent = "Не удалось загрузить YouTube. Проверьте интернет."; };
+  tag.onerror = () => { if (mode === "claude") statusEl.textContent = "Не удалось загрузить YouTube. Попробуйте вкладку Lofi."; };
   document.head.appendChild(tag);
 </script>
 </body>
